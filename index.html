@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Gurbani Live</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: black;
+      color: white;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+    #container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      background: transparent;
+    }
+    #channelName {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.5);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <iframe id="player" allow="autoplay; fullscreen" allowfullscreen></iframe>
+    <div id="overlay"></div>
+    <div id="channelName"></div>
+  </div>
+
+  <script>
+    const channels = [
+      { id: "UC3nqw1kd4AK1q9e68YUoLDQ", name: "Patna Sahib LIVE" },
+      { id: "UCYn6UEtQ771a_OWSiNBoG8w", name: "Amritsar Sahib LIVE" },
+      { id: "UCuerQ47I9Y2qxr4eIopxbYw", name: "Hazur Sahib LIVE" },
+      { id: "UCA1Jqo-WXVuMgs4WcD5f5Yw", name: "Bangla Sahib LIVE" },
+      { id: "UCudVHqnOekwcvpzNpY8_ERw", name: "Fatehgarh Sahib LIVE" }
+    ];
+
+    let current = 0;
+    const player = document.getElementById("player");
+    const overlay = document.getElementById("overlay");
+    const channelName = document.getElementById("channelName");
+
+    async function loadChannel(index) {
+      const channel = channels[index];
+      channelName.textContent = channel.name;
+
+      try {
+        const res = await fetch(`/api/live?channelId=${channel.id}`);
+        const data = await res.json();
+
+        if (data.videoId) {
+          player.src = `https://www.youtube.com/embed/${data.videoId}?autoplay=1&controls=0&fs=1`;
+        } else {
+          player.src = "";
+          channelName.textContent = channel.name + " (offline)";
+        }
+      } catch {
+        channelName.textContent = channel.name + " (error)";
+      }
+    }
+
+    overlay.addEventListener("click", () => {
+      current = (current + 1) % channels.length;
+      loadChannel(current);
+    });
+
+    loadChannel(current);
+  </script>
+</body>
+</html>
