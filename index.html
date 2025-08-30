@@ -41,13 +41,12 @@
       border-radius: 6px;
       font-size: 18px;
       z-index: 3;
-      opacity: 0;
-      transition: opacity 1s ease-in-out;
     }
     #nextStreamBtn {
       position: absolute;
-      bottom: 10px;
-      left: 10px;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
       background: rgba(255,255,255,0.15);
       color: white;
       border: 1px solid white;
@@ -63,7 +62,7 @@
   </style>
 </head>
 <body>
-  <iframe id="videoFrame" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+  <iframe id="videoFrame" allow="autoplay"></iframe>
   <div id="overlay"></div>
   <div id="channelName"></div>
   <button id="nextStreamBtn">Next Stream</button>
@@ -74,35 +73,34 @@
     let streams = [];
 
     let allChannels = [
-      { id: "UC3nqw1kd4AK1q9e68YUoLDQ", name: "Patna Sahib LIVE" },
-      { id: "UCYn6UEtQ771a_OWSiNBoG8w", name: "Amritsar Sahib LIVE" },
-      { id: "UCuerQ47I9Y2qxr4eIopxbYw", name: "Hazur Sahib LIVE" },
-      { id: "UCA1Jqo-WXVuMgs4WcD5f5Yw", name: "Bangla Sahib LIVE" },
-      { id: "UCudVHqnOekwcvpzNpY8_ERw", name: "Fatehgarh Sahib LIVE" },
+      { id: "UC3nqw1kd4AK1q9e68YUoLDQ", name: "1. Patna Sahib LIVE" },
+      { id: "UCYn6UEtQ771a_OWSiNBoG8w", name: "2. Amritsar Sahib LIVE" },
+      { id: "UCuerQ47I9Y2qxr4eIopxbYw", name: "3. Hazur Sahib LIVE" },
+      { id: "UCA1Jqo-WXVuMgs4WcD5f5Yw", name: "4. Bangla Sahib LIVE" },
+      { id: "UCudVHqnOekwcvpzNpY8_ERw", name: "5. Fatehgarh Sahib LIVE" },
     ];
 
     async function loadChannel(index) {
       currentChannel = index;
       currentStream = 0;
       const channel = allChannels[index];
-
       try {
         const res = await fetch(`/api/live?channel=${channel.id}`);
         const data = await res.json();
 
-        if (data.error || !data.videos?.length) {
+        if (data.error) {
           document.getElementById("videoFrame").src = "";
-          showChannelName(channel.name + " (offline)");
+          document.getElementById("channelName").innerText =
+            channel.name + " (offline)";
           streams = [];
           return;
         }
 
         streams = data.videos;
         playStream(0);
-      } catch (err) {
-        document.getElementById("videoFrame").src = "";
-        showChannelName(channel.name + " (network error)");
-        streams = [];
+      } catch (e) {
+        document.getElementById("channelName").innerText =
+          channel.name + " (error)";
       }
     }
 
@@ -110,49 +108,27 @@
       if (!streams.length) return;
       currentStream = index % streams.length;
       const video = streams[currentStream];
-      document.getElementById("videoFrame").src =
-        `https://www.youtube.com/embed/${video.videoId}?autoplay=1&mute=1&controls=0&playsinline=1`;
-      showChannelName(allChannels[currentChannel].name);
+      document.getElementById(
+        "videoFrame"
+      ).src = `https://www.youtube.com/embed/${video.videoId}?autoplay=1&mute=0&controls=0&playsinline=1`;
+      document.getElementById("channelName").innerText =
+        allChannels[currentChannel].name +
+        (streams.length > 1 ? " - " + video.title : "");
     }
 
-    // Show channel name for 8 seconds with fade in/out
-    function showChannelName(text) {
-      const nameEl = document.getElementById("channelName");
-      nameEl.innerText = text;
-      nameEl.style.opacity = 1;
-      clearTimeout(nameEl._fadeTimeout);
-      nameEl._fadeTimeout = setTimeout(() => {
-        nameEl.style.opacity = 0;
-      }, 8000); // visible for 8 sec
-    }
-
-    // Click anywhere on overlay → next channel
+    // Switch to next channel when clicking anywhere on video
     document.getElementById("overlay").onclick = () => {
       loadChannel((currentChannel + 1) % allChannels.length);
     };
 
-    // Button → next stream in same channel
+    // Switch to next stream if same channel has multiple lives
     document.getElementById("nextStreamBtn").onclick = () => {
       playStream(currentStream + 1);
     };
 
-    // Arrow key controls
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowRight") {
-        loadChannel((currentChannel + 1) % allChannels.length);
-      }
-      if (e.key === "ArrowLeft") {
-        loadChannel((currentChannel - 1 + allChannels.length) % allChannels.length);
-      }
-      if (e.key === "ArrowDown") {
-        playStream(currentStream + 1);
-      }
-    });
-
-    // Initial load
+    // Start with first channel
     loadChannel(0);
-
-    // Reload page every 90 minutes to keep stream fresh
+     // Reload page every 90 minutes to keep stream fresh
     setTimeout(() => location.reload(), 90 * 60 * 1000);
   </script>
 </body>
