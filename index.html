@@ -3,15 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <title>Gurbani Live</title>
-  <!-- Favicon -->
+   <!-- Favicon -->
   <link rel="icon" href="https://i.postimg.cc/FRDPFKpY/favicon-96x96.png" type="image/png">
   <style>
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
-      background: black;
-      font-family: sans-serif;
+      background-color: black;
       overflow: hidden;
     }
     #container {
@@ -21,30 +20,39 @@
     }
     #stream {
       position: absolute;
-      top: 0; left: 0;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       border: none;
+      z-index: 0;
+    }
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      cursor: pointer;
     }
     #channelName {
       position: absolute;
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.6);
       color: white;
-      font-size: 20px;
-      font-weight: bold;
-      background: rgba(0,0,0,0.5);
-      padding: 5px 15px;
-      border-radius: 8px;
-    }
-    #overlay {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+      padding: 8px 20px;
+      border-radius: 12px;
+      font-size: 18px;
       z-index: 2;
-      background: transparent;
-      cursor: pointer;
+      font-family: sans-serif;
+      opacity: 0;
+      transition: opacity 0.6s ease-in-out;
+    }
+    #channelName.show {
+      opacity: 1;
     }
   </style>
 </head>
@@ -56,48 +64,43 @@
   </div>
 
   <script>
-    const channels = [
-      { name: "1. Patna Sahib LIVE", id: "UC3nqw1kd4AK1q9e68YUoLDQ" },
-      { name: "2. Amritsar Sahib LIVE", id: "UCYn6UEtQ771a_OWSiNBoG8w" },
-      { name: "3. Hazur Sahib LIVE", id: "UCuerQ47I9Y2qxr4eIopxbYw" },
-      { name: "4. Bangla Sahib LIVE", id: "UCA1Jqo-WXVuMgs4WcD5f5Yw" },
-      { name: "5. Fatehgarh Sahib LIVE", id: "UCudVHqnOekwcvpzNpY8_ERw" }
+    let allChannels = [
+      { id: "UC3nqw1kd4AK1q9e68YUoLDQ", name: "1. Patna Sahib LIVE" },
+      { id: "UCYn6UEtQ771a_OWSiNBoG8w", name: "2. Amritsar Sahib LIVE" },
+      { id: "UCuerQ47I9Y2qxr4eIopxbYw", name: "3. Hazur Sahib LIVE" },
+      { id: "UCA1Jqo-WXVuMgs4WcD5f5Yw", name: "4. Bangla Sahib LIVE" },
+      { id: "UCudVHqnOekwcvpzNpY8_ERw", name: "5. Fatehgarh Sahib LIVE" }
     ];
 
-    let current = 0;
+    let currentIndex = 0;
     const iframe = document.getElementById("stream");
-    const nameBox = document.getElementById("channelName");
+    const overlay = document.getElementById("overlay");
+    const channelName = document.getElementById("channelName");
 
-    async function loadChannel(i) {
-      const channel = channels[i];
-      nameBox.textContent = channel.name;
-
-      try {
-        const res = await fetch(`/api/live?channelId=${channel.id}`);
-        const data = await res.json();
-
-        if (data.videoId) {
-          iframe.src = `https://www.youtube.com/embed/${data.videoId}?autoplay=1&controls=0&fs=1`;
-        } else {
-          iframe.src = "";
-          nameBox.textContent = channel.name + " (Not Live)";
-        }
-      } catch (err) {
-        iframe.src = "";
-        nameBox.textContent = channel.name + " (Error)";
-      }
+    function showChannelName(name) {
+      channelName.innerText = name;
+      channelName.classList.add("show");
+      setTimeout(() => {
+        channelName.classList.remove("show");
+      }, 3000); // stays visible 3 sec
     }
 
-    document.getElementById("overlay").addEventListener("click", () => {
-      current = (current + 1) % channels.length;
-      loadChannel(current);
-          // Auto refresh every 90 minutes (5400000 ms)
-    setInterval(() => {
-      loadChannel(current);
-    }, 5400000);
+    function loadChannel(index) {
+      const ch = allChannels[index];
+      iframe.src = `https://www.youtube.com/embed/live_stream?channel=${ch.id}&autoplay=1&controls=0&fs=1`;
+      showChannelName(ch.name);
+    }
+
+    overlay.addEventListener("click", () => {
+      currentIndex = (currentIndex + 1) % allChannels.length;
+      loadChannel(currentIndex);
     });
 
-    loadChannel(current);
+    // Load first channel
+    loadChannel(currentIndex);
+
+    // Reload page every 90 minutes
+    setTimeout(() => location.reload(), 90 * 60 * 1000);
   </script>
 </body>
 </html>
