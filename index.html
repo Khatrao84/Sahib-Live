@@ -16,17 +16,12 @@
       font-family: Arial, sans-serif;
       color: white;
     }
-    #videoFrame, #offlineImage {
+    #videoFrame {
       position: absolute;
       top: 0; left: 0;
       width: 100%;
       height: 100%;
       border: none;
-      object-fit: cover;
-    }
-    #offlineImage {
-      display: none;
-      background: black;
     }
     #overlay {
       position: absolute;
@@ -69,7 +64,6 @@
 </head>
 <body>
   <iframe id="videoFrame" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-  <img id="offlineImage" src="https://i.postimg.cc/cLMhr42t/9427684-4181615.png" alt="Offline">
   <div id="overlay"></div>
   <div id="channelName"></div>
   <button id="nextStreamBtn">Next Stream</button>
@@ -97,7 +91,8 @@
         const data = await res.json();
 
         if (data.error || !data.videos?.length) {
-          setOffline(channel.name + " (offline)");
+          document.getElementById("videoFrame").src = "";
+          showChannelName(channel.name + " (offline)", false); // stay visible
           streams = [];
           return;
         }
@@ -105,7 +100,8 @@
         streams = data.videos;
         playStream(0);
       } catch (err) {
-        setOffline(channel.name + " (network error)");
+        document.getElementById("videoFrame").src = "";
+        showChannelName(channel.name + " (network error)", false); // stay visible
         streams = [];
       }
     }
@@ -114,23 +110,14 @@
       if (!streams.length) return;
       currentStream = index % streams.length;
       const video = streams[currentStream];
-
-      document.getElementById("videoFrame").style.display = "block";
-      document.getElementById("offlineImage").style.display = "none";
-
       document.getElementById("videoFrame").src =
         `https://www.youtube.com/embed/${video.videoId}?autoplay=1&mute=1&controls=0&playsinline=1`;
       showChannelName(allChannels[currentChannel].name, true); // fade for live
     }
 
-    function setOffline(text) {
-      document.getElementById("videoFrame").style.display = "none";
-      document.getElementById("offlineImage").style.display = "block";
-      document.getElementById("videoFrame").src = "";
-      showChannelName(text, false); // stay visible
-    }
-
     // Show channel name
+    // fade = true → fade out after 8 sec
+    // fade = false → stay visible
     function showChannelName(text, fade = true) {
       const nameEl = document.getElementById("channelName");
       nameEl.innerText = text;
@@ -146,7 +133,7 @@
       }
     }
 
-    // Click anywhere → next channel
+    // Click anywhere on overlay → next channel
     document.getElementById("overlay").onclick = () => {
       loadChannel((currentChannel + 1) % allChannels.length);
     };
