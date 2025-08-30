@@ -1,26 +1,39 @@
 export default async function handler(req, res) {
-  const { channelId } = req.query;
-  const API_KEY = process.env.YT_API_KEY; // add in Vercel dashboard
+  const { channel } = req.query;
+  const API_KEY = process.env.YT_API_KEY;
 
-  if (!channelId) {
-    return res.status(400).json({ error: 'Missing channelId' });
+  if (!channel) {
+    return res.status(400).json({ error: "Channel ID required" });
   }
 
   try {
-    const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${API_KEY}`
+    // Fetch ALL live videos from this channel
+    const resp = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?part=id&channelId=${channel}&type=video&eventType=live&maxResults=5&key=${API_KEY}`
     );
-
-    const data = await response.json();
+    const data = await resp.json();
 
     if (!data.items || data.items.length === 0) {
-      return res.status(404).json({ error: 'No live video found' });
+      return res.status(404).json({ error: "No live streams found" });
     }
 
-    // Pick the first live video
-    const videoId = data.items[0].id.videoId;
-    return res.status(200).json({ videoId });
+    // Collect all video IDs
+    const videoIds = data.items.map((item) => item.id.videoId);
+
+    // Fetch details for all of them
+    const videoResp = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,liveStreamingDetails&id=${videoIds.join(",")}&key=${API_KEY}`
+    );
+    const videoData = await videoResp.json();
+
+    const videos = videoData.items.map((v) => ({
+      videoId: v.id,
+      title: v.snippet.title,
+      channel: v.snippet.channelTitle,
+    }));
+
+    res.status(200).json({ videos });
   } catch (err) {
-    return res.status(500).json({ error: 'Failed to fetch live video' });
+    res.status(500).json({ error: "Server error", details: err.message });
   }
 }
