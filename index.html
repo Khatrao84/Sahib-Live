@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Gurbani Live</title>
+  <title>Gurudwara LIVE Channels</title>
   <style>
     html, body {
       margin: 0;
@@ -46,6 +46,11 @@
       font-size: 18px;
       z-index: 2;
       font-family: sans-serif;
+      opacity: 0;
+      transition: opacity 0.6s ease-in-out;
+    }
+    #channelName.show {
+      opacity: 1;
     }
   </style>
 </head>
@@ -70,10 +75,18 @@
     const overlay = document.getElementById("overlay");
     const channelName = document.getElementById("channelName");
 
+    function showChannelName(name) {
+      channelName.innerText = name;
+      channelName.classList.add("show");
+      setTimeout(() => {
+        channelName.classList.remove("show");
+      }, 3000); // stays visible 3 sec
+    }
+
     function loadChannel(index) {
       const ch = allChannels[index];
       iframe.src = `https://www.youtube.com/embed/live_stream?channel=${ch.id}&autoplay=1&controls=0&fs=1`;
-      channelName.innerText = ch.name;
+      showChannelName(ch.name);
     }
 
     overlay.addEventListener("click", () => {
@@ -84,9 +97,11 @@
     // Load first channel
     loadChannel(currentIndex);
 
-    // Reload page every 90 minutes to keep stream fresh
+    // Reload page every 90 minutes
     setTimeout(() => location.reload(), 90 * 60 * 1000);
   </script>
 </body>
 </html>
+
+
 
