@@ -2,26 +2,28 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Gurbani Live</title>
+  <title>Gurudwara LIVE Channels</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
-      background: black;
-      color: white;
-      font-family: sans-serif;
+      background-color: black;
       overflow: hidden;
     }
     #container {
+      position: relative;
       width: 100vw;
       height: 100vh;
-      position: relative;
     }
-    iframe {
+    #stream {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       border: none;
+      z-index: 0;
     }
     #overlay {
       position: absolute;
@@ -29,30 +31,33 @@
       left: 0;
       width: 100%;
       height: 100%;
+      z-index: 1;
       cursor: pointer;
-      background: transparent;
     }
     #channelName {
       position: absolute;
-      bottom: 10px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.5);
-      padding: 8px 16px;
-      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 12px;
       font-size: 18px;
+      z-index: 2;
+      font-family: sans-serif;
     }
   </style>
 </head>
 <body>
   <div id="container">
-    <iframe id="player" allow="autoplay; fullscreen" allowfullscreen></iframe>
+    <iframe id="stream" allow="autoplay; fullscreen" allowfullscreen></iframe>
     <div id="overlay"></div>
     <div id="channelName"></div>
   </div>
 
   <script>
-    const channels = [
+    let allChannels = [
       { id: "UC3nqw1kd4AK1q9e68YUoLDQ", name: "1. Patna Sahib LIVE" },
       { id: "UCYn6UEtQ771a_OWSiNBoG8w", name: "2. Amritsar Sahib LIVE" },
       { id: "UCuerQ47I9Y2qxr4eIopxbYw", name: "3. Hazur Sahib LIVE" },
@@ -60,37 +65,27 @@
       { id: "UCudVHqnOekwcvpzNpY8_ERw", name: "5. Fatehgarh Sahib LIVE" }
     ];
 
-    let current = 0;
-    const player = document.getElementById("player");
+    let currentIndex = 0;
+    const iframe = document.getElementById("stream");
     const overlay = document.getElementById("overlay");
     const channelName = document.getElementById("channelName");
 
-    async function loadChannel(index) {
-      const channel = channels[index];
-      channelName.textContent = channel.name;
-
-      try {
-        const res = await fetch(`/api/live?channelId=${channel.id}`);
-        const data = await res.json();
-
-        if (data.videoId) {
-          player.src = `https://www.youtube.com/embed/${data.videoId}?autoplay=1&controls=0&fs=1`;
-        } else {
-          player.src = "";
-          channelName.textContent = channel.name + " (offline)";
-        }
-      } catch {
-        channelName.textContent = channel.name + " (error)";
-      }
+    function loadChannel(index) {
+      const ch = allChannels[index];
+      iframe.src = `https://www.youtube.com/embed/live_stream?channel=${ch.id}&autoplay=1&controls=0&fs=1`;
+      channelName.innerText = ch.name;
     }
 
     overlay.addEventListener("click", () => {
-      current = (current + 1) % channels.length;
-      loadChannel(current);
+      currentIndex = (currentIndex + 1) % allChannels.length;
+      loadChannel(currentIndex);
     });
 
-    loadChannel(current);
+    // Load first channel
+    loadChannel(currentIndex);
+
+    // Reload page every 90 minutes to keep stream fresh
+    setTimeout(() => location.reload(), 90 * 60 * 1000);
   </script>
 </body>
 </html>
-
